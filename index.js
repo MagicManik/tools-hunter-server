@@ -15,28 +15,11 @@ const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster
 const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
 
 
-// Middleware function
-function verifyJWT(req, res, next) {
-    const authHeader = req.headers.authorization;
-    if (!authHeader) {
-        return res.status(401).send({ message: 'UnAuthorized access' });
-    }
-    const token = authHeader.split(' ')[1];
-    jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, function (err, decoded) {
-        if (err) {
-            return res.status(403).send({ message: 'Forbidden access' })
-        }
-        req.decoded = decoded;
-        next();
-    });
-}
-
-
-
 async function run() {
     try {
         await client.connect();
         const toolCollection = client.db("tools_hunter").collection("tools");
+        const orderCollection = client.db("tools_hunter").collection("orders");
 
 
         // multiple data get api
@@ -48,6 +31,33 @@ async function run() {
         });
 
 
+        // order post
+        app.post('/orders', async (req, res) => {
+            const order = req.body;
+            const result = await orderCollection.insertOne(order);
+            res.send(result);
+        })
+
+
+        // tool available quantity update
+        app.put('/tool/:id', async (req, res) => {
+
+            const id = req.params.id;
+            const updatedItem = req.body;
+
+            const filter = { _id: ObjectId(id) };
+            const options = { upsert: true };
+
+            const updatedDoc = {
+                $set: {
+                    available: updatedItem.quantity,
+                }
+            };
+            const result = await toolCollection.updateOne(filter, updatedDoc, options);
+            res.send(result);
+        })
+
+
         // single data get api
         app.get('/tool/:id', async (req, res) => {
             const id = req.params.id;
@@ -55,7 +65,6 @@ async function run() {
             const result = await toolCollection.findOne(query);
             res.send(result);
         });
-
 
 
     }
