@@ -57,6 +57,14 @@ async function run() {
         });
 
 
+        // insert tool in database
+        app.post('/tool', async (req, res) => {
+            const tool = req.body;
+            const result = await toolCollection.insertOne(tool);
+            res.send(result);
+        })
+
+
         // insert order in database
         app.post('/orders', async (req, res) => {
             const order = req.body;
