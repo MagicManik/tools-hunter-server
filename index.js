@@ -38,6 +38,7 @@ async function run() {
         const toolCollection = client.db("tools_hunter").collection("tools");
         const orderCollection = client.db("tools_hunter").collection("orders");
         const reviewCollection = client.db("tools_hunter").collection("reviews");
+        const userCollection = client.db("tools_hunter").collection("users");
 
 
         // multiple data get api
@@ -56,6 +57,12 @@ async function run() {
             res.send(reviews);
         });
 
+
+        // get all user for admin
+        app.get('/user', verifyJWT, async (req, res) => {
+            const users = await userCollection.find().toArray();
+            res.send(users);
+        });
 
         // insert tool in database
         app.post('/tool', async (req, res) => {
@@ -98,7 +105,33 @@ async function run() {
             };
             const result = await toolCollection.updateOne(filter, updatedDoc, options);
             res.send(result);
+        });
+
+
+
+
+
+
+        // save user information data in database
+        app.put('/user/:email', async (req, res) => {
+            const email = req.params.email;
+            const user = req.body;
+            const filter = { email: email };
+            const options = { upsert: true };
+            const updateDoc = {
+                $set: user,
+            };
+            const result = await userCollection.updateOne(filter, updateDoc, options);
+            const token = jwt.sign({ email: email }, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '1h' })
+            res.send({ result, token });
         })
+
+
+
+
+
+
+
 
 
         // single data get api
