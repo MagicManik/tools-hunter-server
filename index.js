@@ -86,9 +86,6 @@ async function run() {
             res.send(result);
         })
 
-
-
-
         // tool available quantity update
         app.put('/tool/:id', async (req, res) => {
 
@@ -107,6 +104,13 @@ async function run() {
             res.send(result);
         });
 
+
+        app.get('/admin/:email', async (req, res) => {
+            const email = req.params.email;
+            const user = await userCollection.findOne({ email: email });
+            const isAdmin = user.role === 'admin';
+            res.send({ admin: isAdmin })
+        })
 
 
         // update user data for make a admin
@@ -129,9 +133,6 @@ async function run() {
         })
 
 
-
-
-
         // save user information data in database
         app.put('/user/:email', async (req, res) => {
             const email = req.params.email;
@@ -145,13 +146,6 @@ async function run() {
             const token = jwt.sign({ email: email }, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '1h' })
             res.send({ result, token });
         })
-
-
-
-
-
-
-
 
 
         // single data get api
