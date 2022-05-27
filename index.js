@@ -68,7 +68,7 @@ async function run() {
         });
 
 
-        // tool available quantity update
+        // after order then quantity decrease
         app.put('/tool/:id', async (req, res) => {
 
             const id = req.params.id;
@@ -84,23 +84,6 @@ async function run() {
             };
             const result = await toolCollection.updateOne(filter, updatedDoc, options);
             res.send(result);
-        });
-
-
-        // insert review in database
-        app.post('/review', async (req, res) => {
-            const review = req.body;
-            const result = await reviewCollection.insertOne(review);
-            res.send(result);
-        })
-
-
-        // get multiple review
-        app.get('/review', async (req, res) => {
-            const query = {};
-            const cursor = reviewCollection.find(query);
-            const reviews = await cursor.toArray();
-            res.send(reviews);
         });
 
 
@@ -126,14 +109,6 @@ async function run() {
         });
 
 
-        app.get('/admin/:email', async (req, res) => {
-            const email = req.params.email;
-            const user = await userCollection.findOne({ email: email });
-            const isAdmin = user.role === 'admin';
-            res.send({ admin: isAdmin })
-        })
-
-
         // update user data for make a admin
         app.put('/user/admin/:email', verifyJWT, async (req, res) => {
             const email = req.params.email;
@@ -153,6 +128,15 @@ async function run() {
 
         })
 
+        // user admin or not
+        app.get('/admin/:email', async (req, res) => {
+            const email = req.params.email;
+            const user = await userCollection.findOne({ email: email });
+            const isAdmin = user.role === 'admin';
+            res.send({ admin: isAdmin })
+        })
+
+
 
         // insert order in database
         app.post('/orders', async (req, res) => {
@@ -168,8 +152,6 @@ async function run() {
             const order = await orderCollection.findOne(query);
             res.send(order);
         })
-
-
         app.get('/orders', verifyJWT, async (req, res) => {
 
             const buyer = req.query.buyer;
@@ -185,7 +167,6 @@ async function run() {
             }
 
         })
-
 
         app.post('/create-payment-intent', verifyJWT, async (req, res) => {
             const order = req.body;
@@ -227,6 +208,25 @@ async function run() {
             const updatedOrder = await orderCollection.updateOne(filter, updatedDoc);
             res.send(updatedOrder);
         })
+
+
+
+        // insert review in database
+        app.post('/review', async (req, res) => {
+            const review = req.body;
+            const result = await reviewCollection.insertOne(review);
+            res.send(result);
+        })
+
+
+        // get multiple review
+        app.get('/review', async (req, res) => {
+            const query = {};
+            const cursor = reviewCollection.find(query);
+            const reviews = await cursor.toArray();
+            res.send(reviews);
+        });
+
 
 
         app.delete('/tool/:id', async (req, res) => {
