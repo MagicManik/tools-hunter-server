@@ -3,6 +3,7 @@ const cors = require('cors');
 const jwt = require('jsonwebtoken');
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 require('dotenv').config();
+const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const app = express();
 const port = process.env.PORT || 5000;
 
@@ -49,6 +50,16 @@ async function run() {
             res.send(tools);
         });
 
+
+        // single data get api
+        app.get('/tool/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: ObjectId(id) };
+            const result = await toolCollection.findOne(query);
+            res.send(result);
+        });
+
+
         // get multiple review
         app.get('/review', async (req, res) => {
             const query = {};
@@ -78,6 +89,42 @@ async function run() {
             const result = await orderCollection.insertOne(order);
             res.send(result);
         })
+
+
+
+        app.get('/orders', verifyJWT, async (req, res) => {
+
+            const buyer = req.query.buyer;
+            const decodedEmail = req.decoded.email;
+
+            if (buyer === decodedEmail) {
+                const query = { buyer: buyer };
+                const orders = await orderCollection.find(query).toArray();
+                res.send(orders);
+            }
+            else {
+                return res.status(403).send({ message: 'Forbidden Access' });
+            }
+
+        })
+
+
+        app.delete('/orders/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: ObjectId(id) };
+            const result = await orderCollection.deleteOne(query);
+            res.send(result);
+        });
+
+
+        app.get('/orders/:id', verifyJWT, async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: ObjectId(id) };
+            const order = await orderCollection.findOne(query);
+            res.send(order);
+        })
+
+
 
         // insert review in database
         app.post('/review', async (req, res) => {
@@ -113,6 +160,31 @@ async function run() {
         })
 
 
+
+        app.post('/create-payment-intent', verifyJWT, async (req, res) => {
+            const order = req.body;
+            const price = order.price;
+
+
+            // Maybe something is wrong
+            const quantity = order.quantity;
+            const amount = price * quantity;
+
+            // Create a PaymentIntent with the order amount and currency
+            const paymentIntent = await stripe.paymentIntents.create({
+                amount: amount,
+                // currency: "eur",
+                currency: "usd",
+                payment_method_types: ['card']
+            });
+
+            res.send({
+                clientSecret: paymentIntent.client_secret
+            });
+        })
+
+
+
         // update user data for make a admin
         app.put('/user/admin/:email', verifyJWT, async (req, res) => {
             const email = req.params.email;
@@ -146,15 +218,6 @@ async function run() {
             const token = jwt.sign({ email: email }, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '1h' })
             res.send({ result, token });
         })
-
-
-        // single data get api
-        app.get('/tool/:id', async (req, res) => {
-            const id = req.params.id;
-            const query = { _id: ObjectId(id) };
-            const result = await toolCollection.findOne(query);
-            res.send(result);
-        });
 
 
 
