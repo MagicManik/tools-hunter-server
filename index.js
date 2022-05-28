@@ -109,6 +109,13 @@ async function run() {
         });
 
 
+        // get all orders
+        app.get('/allorders', async (req, res) => {
+            const orders = await orderCollection.find().toArray();
+            res.send(orders);
+        });
+
+
         // update user data for make a admin
         app.put('/user/admin/:email', verifyJWT, async (req, res) => {
             const email = req.params.email;
@@ -152,6 +159,8 @@ async function run() {
             const order = await orderCollection.findOne(query);
             res.send(order);
         })
+
+        // get all orders of verified user
         app.get('/orders', verifyJWT, async (req, res) => {
 
             const buyer = req.query.buyer;
@@ -201,10 +210,12 @@ async function run() {
             const updatedDoc = {
                 $set: {
                     paid: true,
+                    status: payment.status,
                     transactionId: payment.transactionId
                 }
             }
 
+            console.log(payment.status);
             const result = await paymentCollection.insertOne(payment);
             const updatedOrder = await orderCollection.updateOne(filter, updatedDoc);
             res.send(updatedOrder);
