@@ -201,8 +201,6 @@ async function run() {
 
 
         // update orders after payment
-        //  try to deploy heroku
-
         app.patch('/orders/:id', verifyJWT, async (req, res) => {
             const id = req.params.id;
             const payment = req.body;
